@@ -1,10 +1,11 @@
-var gulp = require('gulp');
-var replace = require('gulp-replace');
-var svgo = require('gulp-svgo');
-var fs = require('fs');
-var exec = require('child_process').exec;
-var pack = require('./package.json');
-var version = pack.version;
+import gulp from 'gulp';
+import replace from 'gulp-replace';
+import svgo from 'gulp-svgo';
+import zip from 'gulp-zip';
+import fs from 'fs';
+import pack from './package.json' with { type: "json" };
+import log from 'fancy-log';
+let version = pack.version;
 
 gulp.task('icons', function() {
   return gulp
@@ -47,51 +48,31 @@ gulp.task(
 
 gulp.task(
   'pack-chrome-extension',
-  gulp.series('cp', function(cb) {
+  gulp.series('cp', function() {
     var manifestPath = './extensions/chrome/manifest.json';
     var manifest = JSON.parse(
       fs.readFileSync(manifestPath, { encoding: 'utf8' })
     );
     manifest.version = version;
     fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, '  '));
-    exec(
-      "find . -path '*/.*' -prune -o -type f -print | zip ../packed/coplay.chrome.zip -@",
-      {
-        cwd: 'extensions/chrome'
-      },
-      function(error) {
-        if (error) {
-          return cb(error);
-        } else {
-          cb();
-        }
-      }
-    );
+    return gulp.src('extensions/chrome/*')
+      .pipe(zip('coplay.chrome.zip'))
+      .pipe(gulp.dest('extensions/packed'));
   })
 );
 
 gulp.task(
   'pack-firefox-addon',
-  gulp.series('cp', function(cb) {
+  gulp.series('cp', function() {
     var manifestPath = './extensions/firefox/manifest.json';
     var manifest = JSON.parse(
       fs.readFileSync(manifestPath, { encoding: 'utf8' })
     );
     manifest.version = version;
     fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, '  '));
-    exec(
-      "find . -path '*/.*' -prune -o -type f -print | zip ../packed/coplay.firefox.zip -@",
-      {
-        cwd: 'extensions/firefox'
-      },
-      function(error) {
-        if (error) {
-          return cb(error);
-        } else {
-          cb();
-        }
-      }
-    );
+    return gulp.src('extensions/firefox/*')
+      .pipe(zip('coplay.firefox.zip'))
+      .pipe(gulp.dest('extensions/packed'));
   })
 );
 
@@ -99,4 +80,5 @@ gulp.task(
   'extensions',
   gulp.series('pack-chrome-extension', 'pack-firefox-addon')
 );
+
 gulp.task('default', gulp.series('extensions'));
