@@ -668,7 +668,7 @@
       protocol,
       host: hostname,
       path: pathname,
-      port
+      port: port || 443
     };
   }
 
